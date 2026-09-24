@@ -8,9 +8,14 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #0f172a; color: #f8fafc; display: flex; justify-content: center; padding: 20px; }
         .container { width: 100%; max-width: 900px; background: #1e293b; border-radius: 16px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #334155; padding-bottom: 16px; margin-bottom: 24px; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #334155; padding-bottom: 16px; margin-bottom: 20px; }
         .title h1 { color: #38bdf8; font-size: 24px; }
         .status-badge { background: #22c55e; color: #fff; padding: 6px 12px; border-radius: 20px; font-size: 14px; font-weight: bold; }
+        
+        .auto-box { background: #0f172a; border: 1px solid #38bdf8; padding: 16px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .auto-title { font-size: 16px; font-weight: bold; color: #38bdf8; }
+        .auto-desc { font-size: 12px; color: #94a3b8; }
+
         .master-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
         .btn-master { padding: 14px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .btn-on { background-color: #06b6d4; color: white; }
@@ -23,6 +28,7 @@
         .card-icon { font-size: 40px; margin-bottom: 10px; }
         .card-title { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
         .card-sub { font-size: 13px; color: #94a3b8; margin-bottom: 16px; }
+        
         .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #475569; transition: .4s; border-radius: 34px; }
@@ -38,6 +44,18 @@
                 <h1>🏢 SMART OFFICE CONTROLLER</h1>
             </div>
             <div id="status" class="status-badge">กำลังเชื่อมต่อ...</div>
+        </div>
+
+        <!-- แถบควบคุมโหมดอัตโนมัติ -->
+        <div class="auto-box">
+            <div>
+                <div class="auto-title">⏰ โหมดทำงานอัตโนมัติตามเวลา (Auto Schedule)</div>
+                <div class="auto-desc">เปิด-ปิด Air 1, Air 2, Air 3 อัตโนมัติระหว่างเวลา 08:00 - 16:00 น.</div>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="auto-toggle" onchange="toggleAuto(this.checked)">
+                <span class="slider"></span>
+            </label>
         </div>
 
         <div class="master-controls">
@@ -108,6 +126,11 @@
             ws.onmessage = (event) => {
                 const data = JSON.parse(event.data);
                 if (data.type === 'INIT_STATE') {
+                    // อัปเดตสถานะปุ่ม Auto
+                    if (data.autoMode !== undefined) {
+                        document.getElementById('auto-toggle').checked = data.autoMode;
+                    }
+                    // อัปเดตสถานะ Relay ทั้ง 4 ช่อง
                     data.relays.forEach((state, i) => {
                         const toggle = document.getElementById(`toggle-${i}`);
                         const card = document.getElementById(`card-${i}`);
@@ -135,6 +158,12 @@
         function controlAll(state) {
             if (ws && ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({ type: 'CONTROL_ALL', state: state }));
+            }
+        }
+
+        function toggleAuto(state) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'TOGGLE_AUTO', state: state }));
             }
         }
 
