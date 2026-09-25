@@ -14,7 +14,7 @@ let autoMode = true; // เปิดใช้งานโหมดอัตโ�
 app.use(express.static(path.join(__dirname, 'public')));
 
 // -------------------------------------------------------------------------
-// ฟังก์ชันคำนวณเวลาประเทศไทย (UTC+7) และตรวจสอบตารางการทำงาน
+// ฟังก์ชันคำนวณเวลาประเทศไทย (UTC+7) และตรวจสอบตารางการทำงานชุดใหม่
 // -------------------------------------------------------------------------
 function checkAutoSchedule() {
     if (!autoMode) return; // หากปิดโหมด Auto จะไม่ปรับค่าอัตโนมัติ
@@ -32,7 +32,7 @@ function checkAutoSchedule() {
     let air2 = false;
     let air3 = false;
 
-    // ตรวจสอบเงื่อนไขตาม Timing Diagram (ช่วงเวลาในหน่วยนาที)
+    // ตรวจสอบเงื่อนไขตาม Timing Diagram ที่ปรับปรุงใหม่
     if (totalMinutes >= 480 && totalMinutes < 510) {          // 08:00 - 08:30
         air1 = true;
     } else if (totalMinutes >= 510 && totalMinutes < 540) {   // 08:30 - 09:00
@@ -43,23 +43,23 @@ function checkAutoSchedule() {
         air2 = true;
     } else if (totalMinutes >= 600 && totalMinutes < 630) {   // 10:00 - 10:30
         air1 = true;
-    } else if (totalMinutes >= 630 && totalMinutes < 660) {   // 10:30 - 11:00
-        air2 = true;
-    } else if (totalMinutes >= 660 && totalMinutes < 690) {   // 11:00 - 11:30
-        air3 = true;
-    } else if (totalMinutes >= 690 && totalMinutes < 720) {   // 11:30 - 12:00
-        air1 = true; air3 = true;
-    } else if (totalMinutes >= 720 && totalMinutes < 750) {   // 12:00 - 12:30
+    } else if (totalMinutes >= 630 && totalMinutes < 660) {   // 10:30 - 11:00 [Air1=ON, Air2=ON]
+        air1 = true; air2 = true;
+    } else if (totalMinutes >= 660 && totalMinutes < 690) {   // 11:00 - 11:30 [Air2=ON, Air3=ON]
         air2 = true; air3 = true;
-    } else if (totalMinutes >= 750 && totalMinutes < 840) {   // 12:30 - 14:00
-        air3 = true;
-    } else if (totalMinutes >= 840 && totalMinutes < 870) {   // 14:00 - 14:30
+    } else if (totalMinutes >= 690 && totalMinutes < 720) {   // 11:30 - 12:00 [Air1=ON, Air3=ON]
         air1 = true; air3 = true;
-    } else if (totalMinutes >= 870 && totalMinutes < 900) {   // 14:30 - 15:00
-        air2 = true;
-    } else if (totalMinutes >= 900 && totalMinutes < 930) {   // 15:00 - 15:30
+    } else if (totalMinutes >= 720 && totalMinutes < 750) {   // 12:00 - 12:30 [Air2=ON, Air3=ON]
+        air2 = true; air3 = true;
+    } else if (totalMinutes >= 750 && totalMinutes < 840) {   // 12:30 - 14:00 [Air2=ON, Air3=ON]
+        air2 = true; air3 = true;
+    } else if (totalMinutes >= 840 && totalMinutes < 870) {   // 14:00 - 14:30 [Air1=ON, Air2=ON, Air3=OFF]
+        air1 = true; air2 = true;
+    } else if (totalMinutes >= 870 && totalMinutes < 900) {   // 14:30 - 15:00 [Air2=OFF, Air3=ON]
         air3 = true;
-    } else if (totalMinutes >= 930 && totalMinutes < 960) {   // 15:30 - 16:00
+    } else if (totalMinutes >= 900 && totalMinutes < 930) {   // 15:00 - 15:30 [Air2=ON, Air3=ON]
+        air2 = true; air3 = true;
+    } else if (totalMinutes >= 930 && totalMinutes < 960) {   // 15:30 - 16:00 [Air1=ON]
         air1 = true;
     }
 
