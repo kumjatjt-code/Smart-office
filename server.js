@@ -14,7 +14,8 @@ let autoMode = true;
 app.use(express.static(path.join(__dirname, 'public')));
 
 // -------------------------------------------------------------------------
-// ฟังก์ชันตรวจสอบตารางเวลาทำงาน (คำนวณแยกแต่ละเครื่องอย่างอิสระ)
+// ฟังก์ชันตรวจสอบตารางเวลาทำงาน (ควบคุมอัตโนมัติเฉพาะ Air 1 และ Air 2)
+// ส่วน Air 3 และ Relay 4 สามารถกดปุ่มเปิด-ปิดเองได้ตลอดเวลา
 // -------------------------------------------------------------------------
 function checkAutoSchedule() {
     if (!autoMode) return;
@@ -28,29 +29,26 @@ function checkAutoSchedule() {
     const minutes = thTime.getMinutes();
     const totalMinutes = hours * 60 + minutes;
 
-    // 1. เงื่อนไข Air 1 (รวม 4 ชั่วโมง)
-    const air1 = (totalMinutes >= 480 && totalMinutes < 540) || // 08:00 - 09:00
-                 (totalMinutes >= 600 && totalMinutes < 660) || // 10:00 - 11:00
-                 (totalMinutes >= 720 && totalMinutes < 780) || // 12:00 - 13:00
-                 (totalMinutes >= 900 && totalMinutes < 960);   // 15:00 - 16:00
+    // 1. เงื่อนไข Air 1 
+    const air1 = (totalMinutes >= 480 && totalMinutes < 525) || // 08:00 - 08:45
+                 (totalMinutes >= 600 && totalMinutes < 645) || // 10:00 - 10:45
+                 (totalMinutes >= 690 && totalMinutes < 735) || // 11:30 - 12:15
+                 (totalMinutes >= 795 && totalMinutes < 840) || // 13:15 - 14:00
+                 (totalMinutes >= 885 && totalMinutes < 930);   // 14:45 - 15:30
 
-    // 2. เงื่อนไข Air 2 (รวม 3 ชั่วโมง)
-    const air2 = (totalMinutes >= 540 && totalMinutes < 600) || // 09:00 - 10:00
-                 (totalMinutes >= 630 && totalMinutes < 660) || // 10:30 - 11:00
-                 (totalMinutes >= 750 && totalMinutes < 780) || // 12:30 - 13:00
-                 (totalMinutes >= 870 && totalMinutes < 930);   // 14:30 - 15:30
-
-    // 3. เงื่อนไข Air 3 (รวม 2.5 ชั่วโมง)
-    const air3 = (totalMinutes >= 660 && totalMinutes < 720) || // 11:00 - 12:00
-                 (totalMinutes >= 780 && totalMinutes < 870);   // 13:00 - 14:30
+    // 2. เงื่อนไข Air 2 
+    const air2 = (totalMinutes >= 540 && totalMinutes < 585) || // 09:00 - 09:45
+                 (totalMinutes >= 660 && totalMinutes < 705) || // 11:00 - 11:45
+                 (totalMinutes >= 765 && totalMinutes < 810) || // 12:45 - 13:30
+                 (totalMinutes >= 855 && totalMinutes < 900) || // 14:15 - 15:00
+                 (totalMinutes >= 930 && totalMinutes < 960);   // 15:30 - 16:00
 
     let isChanged = false;
     if (relayStates[0] !== air1) { relayStates[0] = air1; isChanged = true; }
     if (relayStates[1] !== air2) { relayStates[1] = air2; isChanged = true; }
-    if (relayStates[2] !== air3) { relayStates[2] = air3; isChanged = true; }
 
     if (isChanged) {
-        console.log(`[Auto Schedule] สลับสถานะ: Air1=${air1}, Air2=${air2}, Air3=${air3}`);
+        console.log(`[Auto Schedule] สลับสถานะ: Air1=${air1}, Air2=${air2}`);
         broadcastState();
     }
 }
@@ -83,17 +81,18 @@ wss.on('connection', (ws, req) => {
                 return;
             }
 
-            // คำสั่งควบคุมรายช่องจากหน้าเว็บ
+            // คำสั่งควบคุมรายช่องจากหน้าเว็บ (Air 3 คือ ch = 2)
             if (data.type === 'CONTROL') {
                 const { ch, state } = data;
                 if (ch >= 0 && ch < 4) {
-                    relayStates[ch] = state;
+                    relayStates[ch] = Boolean(state);
+                    console.log(`[Manual Control] ช่อง ${ch + 1}: ${relayStates[ch] ? 'เปิด' : 'ปิด'}`);
                     broadcastState();
                 }
             } 
             // คำสั่งควบคุมทั้งหมด
             else if (data.type === 'CONTROL_ALL') {
-                relayStates = relayStates.map(() => data.state);
+                relayStates = relayStates.map(() => Boolean(data.state));
                 broadcastState();
             }
             // สลับโหมด Auto / Manual
